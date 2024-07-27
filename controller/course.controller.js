@@ -1,18 +1,18 @@
 import Course from "../model/course.model.js"
 export const getAllCourses=async(req,res)=>{
-const details= await Course.find({}).select('-lectures');
+const courses= await Course.find({}).select('-lectures');
 
 
 res.status(200).json({
     success: true,
     message: 'All courses',
-    details,
+    courses,
   });
 }
 export const getLecturesByCourseId=async(req,res)=>{
  const {id}=req.params;
  const course=await Course.findById(id);
- if(!Course){
+ if(!course){
     return  res.status(404).json({
         success: false,
         message: "Invaild Course"
@@ -113,7 +113,7 @@ export const updateCourseById = async (req, res, next) => {
     }
   
     // Remove course
-    await course.remove();
+    await Course.findByIdAndDelete(id);
   
     // Send the message as response
     res.status(200).json({
@@ -121,3 +121,50 @@ export const updateCourseById = async (req, res, next) => {
       message: 'Course deleted successfully',
     });
   };
+
+
+
+ export const addLectureToCourseById = async (req, res, next) => {
+   const { title, description } = req.body;
+   const { id } = req.params;
+ 
+   let lectureData = {};
+ 
+   if (!title || !description) {
+    res.status(400).json({
+      success: false,
+      message: 'Title and Description are required',
+    });
+
+
+   }
+ 
+   const course = await Course.findById(id);
+ 
+   if (!course) {
+    res.status(400).json({
+      success: false,
+      message: 'Invalid course id or course not found.',
+    });
+
+   }
+ 
+
+ 
+   course.lectures.push({
+     title,
+     description,
+     lecture: lectureData,
+   });
+ 
+   course.numberOfLectures = course.lectures.length;
+ 
+   // Save the course object
+   await course.save();
+ 
+   res.status(200).json({
+     success: true,
+     message: 'Course lecture added successfully',
+     course,
+   });
+ };

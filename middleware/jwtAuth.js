@@ -20,6 +20,7 @@ export const isloggedIn=async (req, res, next) => {
   next();
 };
 
+//to which role it is vaild ...roles admin
 export const authorizeRoles = (...roles) =>
 async (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -29,3 +30,14 @@ async (req, res, next) => {
 
     next();
   }
+  export const authorizeSubscribers =async (req, res, next) => {
+    // If user is not admin or does not have an active subscription then error else pass
+    if (req.user.role !== "ADMIN" && req.user.subscription.status !== "active") {
+      return  res.status(403).json({ success: false, message:"Please subscribe to access this route."});
+      
+
+    }
+  
+    next();
+  };
+  

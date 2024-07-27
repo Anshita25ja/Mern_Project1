@@ -3,7 +3,10 @@ import userModel from "../model/useModel.js";
 import bcrypt from "bcrypt"
 import emailValidator from "email-validator";
 import crypto from 'crypto';
+import User from "../model/useModel.js";
+import fs from 'fs/promises';
 
+import cloudinary from 'cloudinary';
 
 export const signUp = async (req, res, next) => {
   const { name, email, password,phone,address } = req.body;
@@ -34,11 +37,56 @@ console.log(req.body)
     //   });
     // }
 
-    const userInfo = new userModel(req.body);
-
-    // userSchema "pre" middleware functions for "save" will hash the password using bcrypt
-    // before saving the data into the database
-    const result = await userInfo.save();
+    const user = await User.create({
+    name,
+      email,
+      password,
+      avatar: {
+        public_id: email,
+        secure_url:
+          'https://res.cloudinary.com/dcimryj5l/uploads/OMlbr-M4PzfKE6TgjVfobPreqZ8/Img_anshita.pdf',
+      },
+    });
+  
+    // If user not created send message response
+    if (!user) {
+       return res.status(400).json({
+        success: false,
+        message: "User registration failed, please try again later"
+      });
+    
+    }
+  
+    // Run only if user sends a file
+    if (req.file) {
+      try {
+        const result = await cloudinary.v2.uploader.upload(req.file.path, {
+          folder: 'lms', // Save files in a folder named lms
+          width: 250,
+          height: 250,
+          gravity: 'faces', // This option tells cloudinary to center the image around detected faces (if any) after cropping or resizing the original image
+          crop: 'fill',
+        });
+  
+    //     // If success
+        if (result) {
+          // Set the public_id and secure_url in DB
+          user.avatar.public_id = result.public_id;
+          user.avatar.secure_url = result.secure_url;
+  
+          // After successful upload remove the file from local storage
+          fs.rm(`uploads/${req.file.filename}`);
+        }
+      } 
+      catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: "File not uploaded, please try again'"
+        });
+        
+      }
+    }
+  const result=await user.save();
    
     return res.status(200).json({
       success: true,
@@ -114,21 +162,7 @@ export const signIn = async (req, res, next) => {
 
 
 
-export const getUser = async (req, res, next) => {
-  const userId = req.user.id;
-  try {
-    const user = await userModel.findById(userId);
-    return res.status(200).json({
-      success: true,
-      data: user
-    });
-  } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
+
 export const logOut = async (req, res, next) => {
 
   try {
@@ -251,3 +285,14 @@ return resp.status(200).json({
   message:"admin"
 })
 }
+
+export const getLoggedInUserDetails = async (req, res, _next) => {
+  // Finding the user using the id from modified req object
+  const user = await User.findById(req.user.id);
+
+  res.status(200).json({
+    success: true,
+    message: 'User details',
+    user,
+  });
+};

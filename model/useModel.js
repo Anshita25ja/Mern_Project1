@@ -34,6 +34,14 @@ address:{
 },
 phone:{
   type: String,
+},    
+avatar: {
+  public_id: {
+    type: String,
+  },
+  secure_url: {
+    type: String,
+  },
 },
       role:{
         type: String,

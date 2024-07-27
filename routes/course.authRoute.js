@@ -1,25 +1,15 @@
-import express from 'express'
-import { createCourse, getAllCourses, getLecturesByCourseId, updateCourseById } from '../controller/course.controller.js';
+import { Router } from 'express';
 import { authorizeRoles, isloggedIn } from '../middleware/jwtAuth.js';
-const courseRouter =express.Router();
+const courseRouter =Router();
+import {addLectureToCourseById, createCourse, deleteCourseById, getAllCourses, getLecturesByCourseId, updateCourseById} from "../controller/course.controller.js"
+courseRouter.post("/createCourse",isloggedIn,authorizeRoles('ADMIN'),createCourse)
+courseRouter.get("/getAllCourses",getAllCourses)
+courseRouter.delete("/deleteCourseById/:id",isloggedIn, authorizeRoles('ADMIN'), deleteCourseById)
+courseRouter.get("/getLecturesByCourseId/:id",isloggedIn,getLecturesByCourseId)
+courseRouter.put("/updateCourseById/:id",isloggedIn, authorizeRoles('ADMIN'),updateCourseById)
+courseRouter.post("/addLectureToCourseById/:id",isloggedIn,authorizeRoles('ADMIN'),addLectureToCourseById)
 
 
-courseRouter
-  .route('/')
-  .get(getAllCourses)
-  .post(
-    isloggedIn,
-    authorizeRoles('ADMIN'),
-
-    createCourse
-  )
- 
 
 
-  courseRouter
-  .route('/:id')
-  .get(isloggedIn, getLecturesByCourseId) // Added authorizeSubscribers to check if user is admin or subscribed if not then forbid the access to the lectures
-
-  .put(isloggedIn, authorizeRoles('ADMIN'), updateCourseById);
-
-export default courseRouter
+  export default courseRouter
