@@ -12,7 +12,7 @@ export const isloggedIn=async (req, res, next) => {
 
   // verify the token
   try {
-    const payload =await JWT.verify(token, process.env.SECRET);
+    const payload =await JWT.verify(token, process.env.SECRET_KEY);
     req.user = { id: payload.id, email: payload.email };
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });

@@ -1,4 +1,8 @@
 import Course from "../model/course.model.js"
+import fs from 'fs/promises';
+
+import cloudinary from 'cloudinary';
+
 export const getAllCourses=async(req,res)=>{
 const courses= await Course.find({}).select('-lectures');
 
@@ -9,6 +13,7 @@ res.status(200).json({
     courses,
   });
 }
+
 export const getLecturesByCourseId=async(req,res)=>{
  const {id}=req.params;
  const course=await Course.findById(id);
@@ -37,12 +42,18 @@ export const createCourse = async (req, res, next) => {
       
   
     }
+    
   
     const course = await Course.create({
       title,
       description,
       category,
       createdBy,
+      thumbnail: {
+        public_id: 'dummy',
+        secure_url:
+          'https://res.cloudinary.com/dcimryj5l/uploads/OMlbr-M4PzfKE6TgjVfobPreqZ8/Img_anshita.pdf',
+      },
     });
   
     if (!course) {
@@ -53,7 +64,34 @@ export const createCourse = async (req, res, next) => {
     }
   
     // Run only if user sends a file
-
+    if (req.file) {
+      try {
+        const result = await cloudinary.v2.uploader.upload(req.file.path, {
+          folder: 'lms', // Save files in a folder named lms
+          width: 250,
+          height: 250,
+          gravity: 'faces', // This option tells cloudinary to center the image around detected faces (if any) after cropping or resizing the original image
+          crop: 'fill',
+        });
+  
+    //     // If success
+        if (result) {
+          // Set the public_id and secure_url in DB
+          course.thumbnail.public_id = result.public_id;
+          course.thumbnail.secure_url = result.secure_url;
+  
+          // After successful upload remove the file from local storage
+          fs.rm(`uploads/${req.file.filename}`);
+        }
+      } 
+      catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: "File not uploaded, please try again'"
+        });
+        
+      }
+    }
     await course.save();
 
     res.status(201).json({
@@ -123,48 +161,84 @@ export const updateCourseById = async (req, res, next) => {
   };
 
 
+  
 
- export const addLectureToCourseById = async (req, res, next) => {
-   const { title, description } = req.body;
-   const { id } = req.params;
+  export const addLectureToCourseById = async (req, res, next) => {
+    const { title, description } = req.body;
+    const { id } = req.params;
+  
  
-   let lectureData = {};
+    const lectureData={
+      title, description,lecture:{
+        public_id: 'dummy',
+        secure_url:
+          'https://res.cloudinary.com/dcimryj5l/uploads/OMlbr-M4PzfKE6TgjVfobPreqZ8/Img_anshita.pdf',
+      
+      }
+    }
+  
+    if (!title || !description) {
+
+      return res.status(400).json({
+        success: false,
+        message: 'Title and Description are required',
+      });
+     
+    }
+  
+    const course = await Course.findById(id);
+  
+
+    if (!course) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid course id or course not found.',
+      });
+  
+    }
+  
  
-   if (!title || !description) {
-    res.status(400).json({
-      success: false,
-      message: 'Title and Description are required',
+    if (req.file) {
+      try {
+        const result = await cloudinary.v2.uploader.upload(req.file.path, {
+          folder: 'lms', // Save files in a folder named lms
+          width: 250,
+          height: 250,
+          gravity: 'faces', // This option tells cloudinary to center the image around detected faces (if any) after cropping or resizing the original image
+          crop: 'fill',
+        });
+  
+    //     // If success
+        if (result) {
+          // Set the public_id and secure_url in DB
+          lectureData.lecture.public_id =  result.public_id;
+          lectureData.lecture.secure_url = result.secure_url;
+  
+          // After successful upload remove the file from local storage
+          fs.rm(`uploads/${req.file.filename}`);
+        }
+      } 
+      catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: "File not uploaded, please try again'"
+        });
+        
+      }
+    }
+    course.lectures.push(
+      lectureData
+    );
+  
+    course.numberOfLectures = course.lectures.length;
+  
+    // Save the course object
+    await course.save();
+  
+    res.status(200).json({
+      success: true,
+      message: 'Course lecture added successfully',
+      course,
     });
-
-
-   }
- 
-   const course = await Course.findById(id);
- 
-   if (!course) {
-    res.status(400).json({
-      success: false,
-      message: 'Invalid course id or course not found.',
-    });
-
-   }
- 
-
- 
-   course.lectures.push({
-     title,
-     description,
-     lecture: lectureData,
-   });
- 
-   course.numberOfLectures = course.lectures.length;
- 
-   // Save the course object
-   await course.save();
- 
-   res.status(200).json({
-     success: true,
-     message: 'Course lecture added successfully',
-     course,
-   });
- };
+  };
+  

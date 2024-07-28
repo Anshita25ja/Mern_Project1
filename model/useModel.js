@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt'
 import crypto from 'crypto';
 import JWT from 'jsonwebtoken' ;
 const userSchema =new mongoose.Schema({
-  fullName: {
+  name: {
         type: String,
         require: [true, 'user name is Required'],
         minLength: [5, 'Name must be at least 5 characters'],

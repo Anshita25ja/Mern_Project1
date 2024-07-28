@@ -34,7 +34,15 @@ const courseSchema = new Schema(
         },
       },
     ],
-
+    thumbnail: {
+      public_id: {
+        type: String,
+      },
+      secure_url: {
+        type: String,
+      },
+    },
+   
     numberOfLectures: {
       type: Number,
       default: 0,
