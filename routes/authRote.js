@@ -10,9 +10,9 @@ const  router =express.Router();
 
 
 
-router.get("/logout",logOut)
+router.get("/logout",isloggedIn,logOut)
 router.post("/forgot-password",forgotPassword);
-router.post("/resetpassword/:token", resetPassword)
+router.post("/resetpassword/:token",resetPassword)
 //protected
 
  export default router

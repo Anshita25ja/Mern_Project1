@@ -201,11 +201,10 @@ export const updateCourseById = async (req, res, next) => {
     if (req.file) {
       try {
         const result = await cloudinary.v2.uploader.upload(req.file.path, {
+        
           folder: 'lms', // Save files in a folder named lms
-          width: 250,
-          height: 250,
-          gravity: 'faces', // This option tells cloudinary to center the image around detected faces (if any) after cropping or resizing the original image
-          crop: 'fill',
+          chunk_size: 50000000, // 50 mb size
+          resource_type: 'video',
         });
   
     //     // If success
